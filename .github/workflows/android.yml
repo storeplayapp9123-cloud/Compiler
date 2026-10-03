@@ -4,31 +4,34 @@ name: Aalam Compiler Android APK
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
-  build-android:
-    name: Build Android APK
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android build tools
+      - name: Install Android toolchains
         run: |
           sdkmanager "platform-tools"
           sdkmanager "platforms;android-35"
@@ -36,23 +39,13 @@ jobs:
           sdkmanager "ndk;27.2.12479018"
           sdkmanager "cmake;3.22.1"
 
-      - name: Check project files
-        run: |
-          echo "Checking Aalam Compiler Android project"
-          test -f settings.gradle.kts
-          test -f build.gradle.kts
-          test -f app/build.gradle.kts
-          test -f app/src/main/AndroidManifest.xml
-
       - name: Build debug APK
-        run: |
-          chmod +x gradlew
-          ./gradlew --no-daemon assembleDebug
+        run: gradle --no-daemon assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Aalam-Compiler-Android-APK
+          name: Aalam-Compiler-APK
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
